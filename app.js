@@ -26,6 +26,26 @@ function renderNote() {
     p.textContent = para.trim();
     noteEl.appendChild(p);
   }
+  renderDoodle(note);
+}
+
+// ---------- today's doodle (optional Lottie animation) ----------
+var doodleAnim = null;
+var doodleSrc = "";
+function renderDoodle(note) {
+  const fig = $('doodle');
+  const src = note && note.doodle ? String(note.doodle) : '';
+  if (src === doodleSrc && doodleAnim) return;
+  if (doodleAnim) { doodleAnim.destroy(); doodleAnim = null; }
+  doodleSrc = src;
+  if (!src || !window.lottie) { fig.hidden = true; return; }
+  $('doodle-cap').textContent = note.caption || '';
+  $('doodle-anim').setAttribute('aria-label', note.caption ? `Doodle: ${note.caption}` : "Today's doodle");
+  fig.hidden = false;
+  doodleAnim = window.lottie.loadAnimation({
+    container: $('doodle-anim'), renderer: 'svg', loop: true,
+    autoplay: !reduceMotion(), path: src,
+  });
 }
 renderNote();
 document.addEventListener('visibilitychange', () => {

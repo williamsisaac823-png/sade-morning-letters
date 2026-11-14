@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#23395D">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="A letter for you. Tap to open.">
+  <title>A letter for you</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='7' width='28' height='19' rx='2' fill='%23F3F6FB' stroke='%23D2453A' stroke-width='2'/%3E%3Cpath d='M3 9l13 9 13-9' fill='none' stroke='%231F3B73' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="desk" id="desk">
+    <section class="sealed" id="sealed">
+      <p class="prompt" id="prompt">A letter came for you</p>
+      <button class="envelope" id="envelope" type="button" aria-label="Open the letter">
+        <span class="env-back" aria-hidden="true"></span>
+        <span class="peek" aria-hidden="true"><span class="peek-lines"></span></span>
+        <span class="env-front" aria-hidden="true"></span>
+        <span class="stamp" aria-hidden="true">
+          <svg viewBox="0 0 40 40"><path d="M20 31s-9-5.6-9-12.2A5 5 0 0 1 20 16a5 5 0 0 1 9 2.8C29 25.4 20 31 20 31z" fill="#D2453A"/></svg>
+        </span>
+        <span class="postmark" aria-hidden="true"><span id="postmark-date"></span></span>
+        <span class="env-flap" aria-hidden="true"></span>
+        <span class="seal" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4C19 15.6 12 20 12 20z" fill="#F3F6FB"/></svg>
+        </span>
+      </button>
+      <p class="tap">Tap to open</p>
+    </section>
+
+    <section class="reader" id="reader" hidden aria-labelledby="note-title">
+      <article class="sheet" id="sheet" tabindex="-1">
+        <h1 class="sr-only" id="note-title">Today's note</h1>
+        <p class="sheet-date" id="sheet-date"></p>
+        <div class="lines">
+          <div class="note" id="note"></div>
+          <p class="signoff">Always yours</p>
+        </div>
+      </article>
+      <button class="close" id="close" type="button">Close the letter</button>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

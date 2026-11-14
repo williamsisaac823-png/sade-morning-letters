@@ -13,17 +13,24 @@ const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)')
 const wait = (ms) => new Promise((r) => setTimeout(r, reduceMotion() ? 0 : ms));
 
 // ---------- fill in today's note ----------
-const note = pickNote(NOTES, localToday()) || FALLBACK;
-const stamped = formatDate(note.date);
-$('postmark-date').textContent = stamped || 'TODAY';
-$('sheet-date').textContent = stamped;
-
-noteEl.textContent = '';
-for (const para of String(note.text).split(/\n\s*\n/)) {
-  const p = document.createElement('p');
-  p.textContent = para.trim();
-  noteEl.appendChild(p);
+// Re-run before every opening and when the tab comes back, so a tab left
+// open overnight still shows the new day's note.
+function renderNote() {
+  const note = pickNote(NOTES, localToday()) || FALLBACK;
+  const stamped = formatDate(note.date);
+  $('postmark-date').textContent = stamped || 'TODAY';
+  $('sheet-date').textContent = stamped;
+  noteEl.textContent = '';
+  for (const para of String(note.text).split(/\n\s*\n/)) {
+    const p = document.createElement('p');
+    p.textContent = para.trim();
+    noteEl.appendChild(p);
+  }
 }
+renderNote();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && reader.hidden && !busy) renderNote();
+});
 
 // ---------- open / close ----------
 let busy = false;
@@ -31,6 +38,7 @@ let busy = false;
 async function open() {
   if (busy) return;
   busy = true;
+  renderNote();
   envelope.classList.add('open');           // flap folds back
   await wait(260);
   envelope.classList.add('flap-behind');    // flap tucks behind the letter

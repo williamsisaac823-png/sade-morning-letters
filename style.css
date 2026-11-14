@@ -162,7 +162,7 @@ body {
   background-position: 0 -7px;
 }
 .note { font: 400 clamp(2.2rem, 10vw, 2.8rem)/var(--lh) var(--hand); }
-.note p { margin: 0 0 var(--lh); text-wrap: pretty; }
+.note p { margin: 0 0 var(--lh); text-wrap: pretty; overflow-wrap: anywhere; }
 .note p:last-child { margin-bottom: 0; }
 .signoff { margin: 0; padding-top: var(--lh); text-align: right; font: 400 clamp(2rem, 9vw, 2.5rem)/var(--lh) var(--hand); color: var(--navy); }
 

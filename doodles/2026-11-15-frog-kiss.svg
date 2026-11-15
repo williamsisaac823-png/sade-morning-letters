@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="A little frog blowing a kiss">
+  <style>
+    .ink { stroke: #23315A; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .heart { fill: #D2453A; transform-box: fill-box; transform-origin: center; animation: float 3s ease-in-out infinite; opacity: 0; }
+    .h2 { animation-delay: 1s; } .h3 { animation-delay: 2s; }
+    .hand { transform-origin: 112px 118px; animation: blow 3s ease-in-out infinite; }
+    .blink { transform-box: fill-box; transform-origin: center; animation: blink 4s infinite; }
+    @keyframes float {
+      0% { opacity: 0; transform: translate(0,0) scale(.4); }
+      15% { opacity: 1; }
+      100% { opacity: 0; transform: translate(70px,-55px) scale(1.15) rotate(12deg); }
+    }
+    @keyframes blow { 0%,100% { transform: rotate(0deg); } 20% { transform: rotate(-14deg) translate(4px,-3px); } 40% { transform: rotate(0deg); } }
+    @keyframes blink { 0%,92%,100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+    @media (prefers-reduced-motion: reduce) { .heart, .hand, .blink { animation: none; } .heart { opacity: 1; } }
+  </style>
+  <!-- lily pad -->
+  <ellipse cx="96" cy="160" rx="70" ry="13" fill="#7FB27A" class="ink"/>
+  <path d="M96 160 L120 150" class="ink" fill="none"/>
+  <!-- body -->
+  <ellipse cx="96" cy="128" rx="50" ry="34" fill="#8CC56B" class="ink"/>
+  <ellipse cx="96" cy="138" rx="28" ry="18" fill="#C9E6A8"/>
+  <!-- feet -->
+  <path d="M52 154 q-10 4 -14 0 M56 156 q-4 6 -10 6" class="ink" fill="none"/>
+  <path d="M140 154 q10 4 14 0 M136 156 q4 6 10 6" class="ink" fill="none"/>
+  <!-- head -->
+  <ellipse cx="96" cy="96" rx="44" ry="28" fill="#8CC56B" class="ink"/>
+  <!-- eyes -->
+  <circle cx="72" cy="72" r="15" fill="#8CC56B" class="ink"/>
+  <circle cx="120" cy="72" r="15" fill="#8CC56B" class="ink"/>
+  <g class="blink">
+    <circle cx="72" cy="72" r="9" fill="#fff"/>
+    <circle cx="120" cy="72" r="9" fill="#fff"/>
+    <circle cx="75" cy="73" r="4.5" fill="#23315A"/>
+    <circle cx="123" cy="73" r="4.5" fill="#23315A"/>
+  </g>
+  <!-- cheeks -->
+  <ellipse cx="66" cy="104" rx="7" ry="4" fill="#F29C9C" opacity=".8"/>
+  <ellipse cx="126" cy="104" rx="7" ry="4" fill="#F29C9C" opacity=".8"/>
+  <!-- puckered lips -->
+  <path d="M104 100 q6 -5 9 0 q-3 5 -9 0 z" fill="#D2453A" class="ink" stroke-width="2"/>
+  <!-- hand blowing the kiss -->
+  <g class="hand">
+    <path d="M70 128 q20 -2 42 -18" class="ink" fill="none"/>
+    <circle cx="116" cy="106" r="7" fill="#8CC56B" class="ink"/>
+  </g>
+  <!-- hearts -->
+  <g transform="translate(128 90)">
+    <path class="heart" d="M0 6 C0 0 8 -2 9 4 C10 -2 18 0 18 6 C18 13 9 18 9 18 C9 18 0 13 0 6 Z"/>
+    <path class="heart h2" d="M0 6 C0 0 8 -2 9 4 C10 -2 18 0 18 6 C18 13 9 18 9 18 C9 18 0 13 0 6 Z"/>
+    <path class="heart h3" d="M0 6 C0 0 8 -2 9 4 C10 -2 18 0 18 6 C18 13 9 18 9 18 C9 18 0 13 0 6 Z"/>
+  </g>
+</svg>

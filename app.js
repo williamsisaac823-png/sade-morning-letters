@@ -27,6 +27,12 @@ function renderNote() {
     noteEl.appendChild(p);
   }
   renderDoodle(note);
+  const game = $('game-link');
+  if (note.game) {
+    game.href = note.game;
+    game.textContent = note.gameLabel || "Play today's game";
+    game.hidden = false;
+  } else game.hidden = true;
 }
 
 // ---------- today's doodle (optional Lottie animation) ----------
@@ -38,10 +44,19 @@ function renderDoodle(note) {
   if (src === doodleSrc && doodleAnim) return;
   if (doodleAnim) { doodleAnim.destroy(); doodleAnim = null; }
   doodleSrc = src;
-  if (!src || !window.lottie) { fig.hidden = true; return; }
+  const isSvg = /\.svg$/i.test(src);
+  $('doodle-anim').textContent = '';
+  if (!src || (!isSvg && !window.lottie)) { fig.hidden = true; return; }
   $('doodle-cap').textContent = note.caption || '';
   $('doodle-anim').setAttribute('aria-label', note.caption ? `Doodle: ${note.caption}` : "Today's doodle");
   fig.hidden = false;
+  if (isSvg) {
+    const img = document.createElement('img');
+    img.src = src; img.alt = ''; img.className = 'doodle-img';
+    $('doodle-anim').appendChild(img);
+    doodleAnim = { destroy() { $('doodle-anim').textContent = ''; } };
+    return;
+  }
   doodleAnim = window.lottie.loadAnimation({
     container: $('doodle-anim'), renderer: 'svg', loop: true,
     autoplay: !reduceMotion(), path: src,

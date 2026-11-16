@@ -45,11 +45,26 @@ function renderDoodle(note) {
   if (doodleAnim) { doodleAnim.destroy(); doodleAnim = null; }
   doodleSrc = src;
   const isSvg = /\.svg$/i.test(src);
+  const isPage = /\.html$/i.test(src);
   $('doodle-anim').textContent = '';
-  if (!src || (!isSvg && !window.lottie)) { fig.hidden = true; return; }
+  $('doodle-anim').classList.toggle('wide', isPage);
+  const joke = $('doodle-joke');
+  joke.textContent = note && note.joke ? String(note.joke) : '';
+  joke.hidden = !joke.textContent;
+  if (!src || (!isSvg && !isPage && !window.lottie)) { fig.hidden = true; return; }
   $('doodle-cap').textContent = note.caption || '';
   $('doodle-anim').setAttribute('aria-label', note.caption ? `Doodle: ${note.caption}` : "Today's doodle");
   fig.hidden = false;
+  if (isPage) {
+    // a small 3D / interactive scene in its own page (e.g. doodles/2026-11-16-bean-skate.html)
+    const frame = document.createElement('iframe');
+    frame.src = src; frame.className = 'doodle-frame';
+    frame.title = note.caption || "Today's doodle";
+    frame.loading = 'lazy';
+    $('doodle-anim').appendChild(frame);
+    doodleAnim = { destroy() { $('doodle-anim').textContent = ''; } };
+    return;
+  }
   if (isSvg) {
     const img = document.createElement('img');
     img.src = src; img.alt = ''; img.className = 'doodle-img';

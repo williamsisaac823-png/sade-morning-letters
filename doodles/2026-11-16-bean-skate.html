@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Bean ice skating</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; cursor: pointer; touch-action: manipulation; }
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="Bean in a top hat ice skating in circles. Tap him to make him twirl."></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  if (!window.THREE) return;
+  const canvas = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 2, 0.1, 50);
+
+  // Toon shading, 3-step ramp, like marker on paper
+  const ramp = new THREE.DataTexture(new Uint8Array([120,120,120,255, 200,200,200,255, 255,255,255,255]), 3, 1, THREE.RGBAFormat);
+  ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.needsUpdate = true;
+  const toon = (c) => new THREE.MeshToonMaterial({ color: c, gradientMap: ramp });
+  const INK = 0x28354f;
+  const beanMat = toon(0xfffaf0), hatMat = toon(0x2b2f3a), bandMat = toon(0xd2453a),
+        bootMat = toon(0x2b2f3a), bladeMat = toon(0xc9d3e0), cheekMat = toon(0xf4a9b8),
+        inkMat = new THREE.MeshBasicMaterial({ color: INK }),
+        outline = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(2, 4, 3); scene.add(key);
+
+  // ---------- the ice ----------
+  const RX = 1.45, RZ = 0.55;                       // skating path (ellipse)
+  const ice = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshBasicMaterial({ color: 0xcfe3f6 }));
+  ice.rotation.x = -Math.PI / 2; ice.scale.set(RX + 0.55, RZ + 0.45, 1); scene.add(ice);
+  const rim = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 64), new THREE.MeshBasicMaterial({ color: INK, side: THREE.DoubleSide }));
+  rim.rotation.x = -Math.PI / 2; rim.position.y = 0.002; rim.scale.copy(ice.scale); scene.add(rim);
+  // skate scratches on the ice
+  const scratch = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  for (const [s, a] of [[0.92, 0.2], [1.06, 2.2], [0.98, 4.1]]) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.995, 1, 48, 1, a, 1.3), scratch);
+    r.rotation.x = -Math.PI / 2; r.position.y = 0.003; r.scale.set(RX * s, RZ * s, 1); scene.add(r);
+  }
+
+  // ---------- Bean (from Isaac's doodle: white bean, dot eye, top hat, little legs) ----------
+  const skater = new THREE.Group(); scene.add(skater);   // moves around the rink, faces travel
+  const lean = new THREE.Group(); skater.add(lean);       // leans into the turn
+  const bean = new THREE.Group(); lean.add(bean);         // twirls / bobs
+
+  // Kidney-shaped body: a bent tube with round caps; local +x is the front (the notch faces forward)
+  const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0.06, 0.42, 0), new THREE.Vector3(-0.34, 0.78, 0), new THREE.Vector3(0.08, 1.12, 0));
+  function kidney(r, mat) {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 40, r, 32, false), mat));
+    for (const t of [0, 1]) { const c = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 20), mat); c.position.copy(curve.getPoint(t)); g.add(c); }
+    return g;
+  }
+  bean.add(kidney(0.3, beanMat));
+  bean.add(kidney(0.325, outline));
+
+  // eyes (one on each side, like the doodle's dot) + rosy cheeks
+  const dot = new THREE.SphereGeometry(1, 16, 12);
+  for (const z of [-1, 1]) {
+    const e = new THREE.Mesh(dot, inkMat); e.scale.set(0.05, 0.07, 0.035); e.position.set(0.29, 1.21, z * 0.195); e.lookAt(0.29 + 0.7, 1.21 + 0.29, z * 0.195 + z * 0.65); bean.add(e);
+    const c = new THREE.Mesh(dot, cheekMat); c.scale.set(0.05, 0.03, 0.02); c.position.set(0.31, 1.09, z * 0.2); c.lookAt(1.31, 1.09, z * 1.2); bean.add(c);
+  }
+
+  // top hat, tipped back a little
+  const hat = new THREE.Group(); hat.position.set(0.04, 1.38, 0); hat.rotation.z = 0.18; bean.add(hat);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.035, 32), hatMat); hat.add(brim);
+  const brimO = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.06, 32), outline); hat.add(brimO);
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.17, 0.32, 32), hatMat); crown.position.y = 0.17; hat.add(crown);
+  const crownO = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.19, 0.35, 32), outline); crownO.position.y = 0.17; hat.add(crownO);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.06, 32), bandMat); band.position.y = 0.05; hat.add(band);
+
+  // little legs with skates; each hip swings sideways for the push
+  const legs = [];
+  for (const z of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(0.02, 0.2, z * 0.11); bean.add(hip);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.2, 8), inkMat); leg.position.y = -0.04; hip.add(leg);
+    const boot = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), bootMat); boot.scale.set(0.09, 0.05, 0.05); boot.position.set(0.04, -0.15, 0); hip.add(boot);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.012, 0.012), bladeMat); blade.position.set(0.04, -0.2, 0); hip.add(blade);
+    const bladeO = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.03, 0.03), outline); bladeO.position.copy(blade.position); hip.add(bladeO);
+    legs.push({ hip, z });
+  }
+  bean.position.y = 0.01;
+  bean.scale.setScalar(0.62);
+
+  // soft shadow that follows him
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: INK, transparent: true, opacity: 0.15 }));
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.004; scene.add(shadow);
+
+  // ---------- camera + size ----------
+  let lastW = 0, lastH = 0;
+  function size() {
+    const w = canvas.clientWidth || 300, h = canvas.clientHeight || 150;
+    if (w === lastW && h === lastH) return; lastW = w; lastH = h;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    const narrow = camera.aspect < 1.6;
+    camera.position.set(0, narrow ? 2.7 : 2.1, narrow ? 6.2 : 5.0); camera.lookAt(0, 0.3, 0);
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', size); size();
+  if (window.ResizeObserver) new ResizeObserver(size).observe(canvas);
+
+  // ---------- tap to twirl ----------
+  let twirlT = -1;
+  canvas.addEventListener('pointerup', () => { if (twirlT < 0) twirlT = 0; });
+
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SPEED = 0.55; // radians of path per second
+
+  function pose(t, dt) {
+    const th = reduce ? 0.9 : t * SPEED;
+    const x = RX * Math.cos(th), z = RZ * Math.sin(th);
+    const tx = -RX * Math.sin(th), tz = RZ * Math.cos(th);
+    skater.position.set(x, 0, z);
+    skater.rotation.y = Math.atan2(-tz, tx);          // face where he's going
+    // lean into the turn (more at the tight ends of the oval)
+    const curvature = (RX * RZ) / Math.pow(tx * tx + tz * tz, 1.5);
+    lean.rotation.x = -Math.min(0.32, curvature * 0.09);
+    // push-and-glide strides
+    const stride = reduce ? 0 : Math.sin(t * 4.2);
+    legs.forEach(({ hip, z }) => { hip.rotation.x = z * Math.max(0, z * stride) * 0.5; });
+    bean.rotation.z = reduce ? -0.1 : -0.12 + Math.sin(t * 4.2) * 0.03;  // little forward hunch
+    let hop = 0, spin = 0;
+    if (twirlT >= 0) {
+      twirlT += dt; const k = twirlT / 0.9;
+      if (k >= 1) twirlT = -1; else { spin = k * Math.PI * 2; hop = Math.sin(k * Math.PI) * 0.18; }
+    }
+    bean.rotation.y = spin;
+    bean.position.y = 0.01 + hop + (reduce ? 0 : Math.abs(Math.sin(t * 4.2)) * 0.015);
+    shadow.position.set(x, 0.004, z); shadow.scale.setScalar(1 - hop * 1.5);
+    renderer.render(scene, camera);
+  }
+  window.__frame = (t) => pose(t, 0);   // for screenshots
+
+  const clock = new THREE.Clock();
+  let last = 0;
+  (function loop() {
+    const t = clock.getElapsedTime(); pose(t, Math.min(0.05, t - last)); last = t;
+    if (!reduce || twirlT >= 0) requestAnimationFrame(loop);
+    else setTimeout(loop, 250);
+  })();
+})();
+</script>
+</body>
+</html>

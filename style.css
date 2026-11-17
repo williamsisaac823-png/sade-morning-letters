@@ -209,3 +209,31 @@ body {
 .doodle-frame { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
 .doodle-joke { margin: 6px 0 0; font: 400 clamp(1.25rem, 5.5vw, 1.5rem)/1.15 var(--hand); color: var(--ink); text-align: center; text-wrap: balance; }
 .doodle-joke[hidden] { display: none; }
+
+/* ---------- intro scene: sunrise before the letter (added 2026-11-17) ---------- */
+.intro { position: fixed; inset: 0; z-index: 20; overflow: hidden; background: #070b16;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 0 16px calc(48px + env(safe-area-inset-bottom)); gap: 18px; }
+.intro[hidden] { display: none; }
+.intro-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 56% 40%;
+  transform: translateY(42%) scale(1.08); filter: brightness(.12) saturate(.3); }
+.intro-sky { position: absolute; inset: 0; background: linear-gradient(#060a18 0%, #1a1f45 55%, #4a2a4a 100%); opacity: .92; }
+.intro-glow { position: absolute; left: 50%; top: 100%; width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax;
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,214,102,.55) 0%, rgba(255,170,80,.25) 30%, rgba(255,170,80,0) 60%);
+  opacity: 0; }
+.intro-title { position: relative; margin: 0; font: 400 clamp(3.2rem, 15vw, 5rem)/1 var(--hand); color: #fff;
+  text-shadow: 0 2px 0 #D2453A, 0 6px 22px rgba(0,0,0,.45); transform: scale(0); opacity: 0; }
+.intro.pop .intro-title { animation: intro-pop 650ms cubic-bezier(.34,1.56,.64,1) forwards; }
+.intro-go { position: relative; padding: 12px 22px; border: 0; border-radius: 999px; background: var(--red); color: var(--paper);
+  font: 600 1.05rem var(--label); letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  opacity: 0; pointer-events: none; }
+.intro.pop .intro-go { pointer-events: auto; animation: go-in 400ms ease 250ms forwards; }
+@keyframes go-in { to { opacity: 1; } }
+.intro-go:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+.intro.leaving { animation: intro-out 480ms ease forwards; }
+@keyframes intro-out { to { opacity: 0; } }
+@keyframes intro-pop { 0% { transform: scale(0) rotate(-6deg); opacity: 0; } 60% { transform: scale(1.15) rotate(2deg); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .intro-pic { transform: none; filter: none; } .intro-sky { opacity: 0; } .intro-glow { display: none; }
+  .intro-title { transform: none; opacity: 1; } .intro-go { opacity: 1; }
+}

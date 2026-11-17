@@ -48,6 +48,7 @@ function renderDoodle(note) {
   const isPage = /\.html$/i.test(src);
   $('doodle-anim').textContent = '';
   $('doodle-anim').classList.toggle('wide', isPage);
+  $('doodle-anim').style.aspectRatio = isPage && note.doodleRatio ? String(note.doodleRatio) : '';
   const joke = $('doodle-joke');
   joke.textContent = note && note.joke ? String(note.joke) : '';
   joke.hidden = !joke.textContent;
@@ -82,6 +83,56 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && reader.hidden && !busy) renderNote();
 });
 
+// Sunrise driven by requestAnimationFrame so it runs the same on every phone.
+function sunrise(pic, sky, glow, ms) {
+  const ease = (k) => 1 - Math.pow(1 - k, 3);
+  const set = (k) => {
+    const e = ease(k);
+    pic.style.transform = `translateY(${42 * (1 - e)}%) scale(${1.08 - 0.08 * e})`;
+    pic.style.filter = `brightness(${0.12 + 0.88 * Math.min(1, k * 1.15)}) saturate(${0.3 + 0.7 * k})`;
+    sky.style.opacity = String(0.92 * (1 - Math.min(1, Math.max(0, (k - 0.08) / 0.85))));
+    glow.style.top = `${100 - 62 * e}%`;
+    glow.style.opacity = String(Math.min(1, k * 1.7));
+  };
+  if (reduceMotion()) { set(1); return Promise.resolve(); }
+  set(0);
+  return new Promise((resolve) => {
+    let finished = false;
+    const done = () => { if (!finished) { finished = true; set(1); resolve(); } };
+    setTimeout(done, ms + 600);             // never stall if frames pause
+    const t0 = performance.now();
+    const step = (now) => {
+      if (finished) return;
+      const k = Math.min(1, (now - t0) / ms);
+      set(k);
+      if (k < 1) requestAnimationFrame(step); else done();
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+// ---------- optional intro scene (e.g. a sunrise before the letter) ----------
+// note.intro = { image: 'doodles/....jpg', title: 'Happy Tuesday' }
+async function playIntro(intro) {
+  const box = $('intro'), pic = $('intro-pic'), go = $('intro-go');
+  pic.src = String(intro.image);
+  $('intro-title').textContent = intro.title || '';
+  await new Promise((r) => { if (pic.complete) r(); else { pic.onload = pic.onerror = () => r(); } });
+  box.classList.remove('pop', 'leaving');
+  box.hidden = false;
+  void box.offsetWidth;                     // start from the dark frame
+  await sunrise(pic, box.querySelector('.intro-sky'), box.querySelector('.intro-glow'), 4000);
+  await wait(200);
+  box.classList.add('pop');                 // "Happy Tuesday" pops in
+  await wait(600);
+  go.focus({ preventScroll: true });
+  await new Promise((r) => go.addEventListener('click', r, { once: true }));
+  box.classList.add('leaving');
+  await wait(500);
+  box.hidden = true;
+  box.classList.remove('pop', 'leaving');
+}
+
 // ---------- open / close ----------
 let busy = false;
 
@@ -98,6 +149,8 @@ async function open() {
   sealed.classList.add('leaving');          // envelope drops away
   await wait(350);
   sealed.hidden = true;
+  const note = pickNote(NOTES, localToday()) || FALLBACK;
+  if (note.intro && note.intro.image) await playIntro(note.intro);
   reader.hidden = false;                    // sheet unfolds into view
   sheet.focus({ preventScroll: true });
   busy = false;
@@ -120,6 +173,7 @@ async function close() {
 }
 
 envelope.addEventListener('click', open);
+if (location.hash === '#open') open();      // preview hook: open straight away
 closeBtn.addEventListener('click', close);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !reader.hidden) close();

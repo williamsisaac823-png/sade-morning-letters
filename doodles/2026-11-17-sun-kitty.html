@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sun kitty</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; cursor: pointer; touch-action: manipulation; }
+  .ahh { position: absolute; left: 0; right: 0; top: 4%; text-align: center; pointer-events: none;
+    font: 400 clamp(2rem, 14vw, 3.4rem)/1 'Nanum Pen Script', 'Segoe Print', cursive; color: #D2453A;
+    text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 4px 10px rgba(0,0,0,.2); opacity: 0; transform: scale(.4); transition: opacity 160ms, transform 260ms cubic-bezier(.34,1.56,.64,1); }
+  .ahh.on { opacity: 1; transform: scale(1); }
+  .tap { position: absolute; left: 0; right: 0; bottom: 2%; text-align: center; pointer-events: none;
+    font: 400 1.35rem/1 'Nanum Pen Script', cursive; color: #5C6B8C; transition: opacity 400ms; }
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="A 3D cat face shining like the sun. Tap it and it opens its mouth wide: AHHH!"></canvas>
+<div class="ahh" id="ahh" aria-hidden="true">AHHHHH!</div>
+<div class="tap" id="tap" aria-hidden="true">tap me</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  if (!window.THREE) return;
+  const canvas = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+  camera.position.set(0, 0.05, 8.4); camera.lookAt(0, 0, 0);
+
+  const ramp = new THREE.DataTexture(new Uint8Array([140,140,140,255, 210,210,210,255, 255,255,255,255]), 3, 1, THREE.RGBAFormat);
+  ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.needsUpdate = true;
+  const toon = (c) => new THREE.MeshToonMaterial({ color: c, gradientMap: ramp });
+  const INK = 0x3a2a1c;
+  const fur = toon(0xd9a35f), cream = toon(0xfbeedb), stripe = toon(0x8a5a2b), pinkEar = toon(0xf2a7a0),
+        eyeMat = toon(0x16100c), shine = new THREE.MeshBasicMaterial({ color: 0xffffff }),
+        nose = toon(0xe58a8a), mouthMat = new THREE.MeshBasicMaterial({ color: 0x6e1a2c }), tongue = toon(0xf48ca0),
+        rayMat = new THREE.MeshBasicMaterial({ color: 0xffcf3a }), whisk = new THREE.MeshBasicMaterial({ color: 0x5a4632 }),
+        outline = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const key = new THREE.DirectionalLight(0xfff2d0, 0.75); key.position.set(1.5, 2.5, 4); scene.add(key);
+
+  // ---------- the sun: glow + spiky rays behind the head ----------
+  const sun = new THREE.Group(); sun.position.z = -0.5; scene.add(sun);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(1.55, 64), new THREE.MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0.85 }));
+  sun.add(glow);
+  const halo = new THREE.Mesh(new THREE.CircleGeometry(1.95, 64), new THREE.MeshBasicMaterial({ color: 0xfff1b8, transparent: true, opacity: 0.45 }));
+  halo.position.z = -0.02; sun.add(halo);
+  const rays = new THREE.Group(); sun.add(rays);
+  const N = 14;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const r = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.62, 4), rayMat);
+    r.position.set(Math.cos(a) * 1.55, Math.sin(a) * 1.55, 0);
+    r.rotation.z = a - Math.PI / 2;
+    r.scale.z = 0.25;
+    rays.add(r);
+  }
+
+  // ---------- the cat head ----------
+  const cat = new THREE.Group(); scene.add(cat);
+  const head = new THREE.Group(); cat.add(head);
+  const S = (geo, mat, pos, scale, rot) => {
+    const m = new THREE.Mesh(geo, mat); m.position.set(...pos); if (scale) m.scale.set(...scale);
+    if (rot) m.rotation.set(...rot); head.add(m); return m;
+  };
+  const sph = new THREE.SphereGeometry(1, 48, 32);
+  S(sph, fur, [0, 0, 0], [1.12, 1.0, 0.9]);
+  S(sph, outline, [0, 0, 0], [1.16, 1.04, 0.94]);
+  // ears
+  for (const s of [-1, 1]) {
+    const ear = S(new THREE.ConeGeometry(0.4, 0.75, 24), fur, [s * 0.66, 0.92, -0.05], [1, 1, 0.55], [0, 0, -s * 0.42]);
+    const earO = S(new THREE.ConeGeometry(0.45, 0.84, 24), outline, [s * 0.66, 0.91, -0.08], [1, 1, 0.6], [0, 0, -s * 0.42]);
+    const inner = S(new THREE.ConeGeometry(0.24, 0.48, 24), pinkEar, [s * 0.64, 0.9, 0.14], [1, 1, 0.3], [0, 0, -s * 0.42]);
+  }
+  // forehead stripes
+  for (const [x, rz] of [[-0.2, 0.25], [0, 0], [0.2, -0.25]]) S(sph, stripe, [x, 0.62, 0.72], [0.05, 0.17, 0.03], [ -0.6, 0, rz]);
+  // cream muzzle + cheeks
+  S(sph, cream, [0, -0.32, 0.55], [0.62, 0.5, 0.4]);
+  // big round eyes (like the photo) with shine
+  const eyes = [];
+  for (const s of [-1, 1]) {
+    const g = new THREE.Group(); g.position.set(s * 0.4, 0.18, 0.74); g.rotation.y = s * 0.28; head.add(g);
+    const rim = new THREE.Mesh(sph, toon(0x6b4a2a)); rim.scale.set(0.25, 0.25, 0.1); g.add(rim);
+    const e = new THREE.Mesh(sph, eyeMat); e.scale.set(0.22, 0.22, 0.1); e.position.z = 0.02; g.add(e);
+    const sh1 = new THREE.Mesh(sph, shine); sh1.scale.setScalar(0.06); sh1.position.set(0.06, 0.08, 0.1); g.add(sh1);
+    const sh2 = new THREE.Mesh(sph, shine); sh2.scale.setScalar(0.03); sh2.position.set(-0.07, -0.06, 0.1); g.add(sh2);
+    eyes.push(g);
+  }
+  // nose
+  S(new THREE.ConeGeometry(0.08, 0.09, 3), nose, [0, -0.08, 0.93], [1, 1, 0.5], [0, 0, Math.PI]);
+  // mouth: closed = small dark smile, open = big "AHHH"
+  const mouth = new THREE.Group(); mouth.position.set(0, -0.38, 0.93); head.add(mouth);
+  const hole = new THREE.Mesh(sph, mouthMat); hole.scale.set(0.3, 0.32, 0.08); mouth.add(hole);
+  const tng = new THREE.Mesh(sph, tongue); tng.scale.set(0.22, 0.16, 0.06); tng.position.set(0, -0.14, 0.03); mouth.add(tng);
+  const fang = new THREE.ConeGeometry(0.035, 0.08, 8);
+  for (const s of [-1, 1]) { const f = new THREE.Mesh(fang, shine); f.position.set(s * 0.14, 0.26, 0.06); f.rotation.z = Math.PI; mouth.add(f); }
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.014, 8, 24, Math.PI), mouthMat);
+  smile.rotation.z = Math.PI; smile.position.set(0, -0.24, 0.975); head.add(smile);
+  // whiskers
+  for (const s of [-1, 1]) for (const [dy, tilt] of [[0.02, 0.12], [-0.08, 0], [-0.18, -0.12]]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.62, 6), whisk);
+    w.rotation.z = Math.PI / 2 + s * tilt; w.position.set(s * 0.72, -0.22 + dy, 0.62); head.add(w);
+  }
+
+  // ---------- size ----------
+  let lastW = 0, lastH = 0;
+  function size() {
+    const w = canvas.clientWidth || 300, h = canvas.clientHeight || 300;
+    if (w === lastW && h === lastH) return; lastW = w; lastH = h;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    camera.position.z = camera.aspect < 1 ? 8.4 / camera.aspect : 8.4;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', size); size();
+  if (window.ResizeObserver) new ResizeObserver(size).observe(canvas);
+
+  // ---------- tap: AHHHH ----------
+  const ahh = document.getElementById('ahh'), tapHint = document.getElementById('tap');
+  let yellT = -1;
+  canvas.addEventListener('pointerup', () => {
+    yellT = 0; ahh.classList.add('on'); tapHint.style.opacity = 0;
+    clearTimeout(ahh._t); ahh._t = setTimeout(() => ahh.classList.remove('on'), 1400);
+  });
+
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function pose(t, dt) {
+    let open = 0;
+    if (yellT >= 0) {
+      yellT += dt;
+      const k = yellT;
+      open = k < 0.15 ? k / 0.15 : k < 1.4 ? 1 : k < 1.6 ? 1 - (k - 1.4) / 0.2 : 0;
+      if (k >= 1.6) yellT = -1;
+    }
+    const shake = open > 0.9 && !reduce ? Math.sin(t * 60) * 0.015 : 0;
+    // mouth: tiny when closed, huge when open
+    mouth.scale.set(0.3 + open * 0.75, 0.04 + open * 1.45, 1);
+    mouth.position.y = -0.36 - open * 0.12;
+    smile.visible = open < 0.2;
+    eyes.forEach(e => { const s = 1 + open * 0.18; e.scale.set(s, s, 1); });
+    // blink when idle
+    if (open === 0 && (t % 4) > 3.85) eyes.forEach(e => e.scale.y = 0.12);
+    // idle sway, head tips back when yelling
+    const sway = reduce ? 0 : Math.sin(t * 1.3) * 0.08;
+    cat.rotation.z = sway * 0.6 + shake;
+    cat.rotation.x = -open * 0.18 + (reduce ? 0 : Math.sin(t * 1.7) * 0.04);
+    cat.rotation.y = reduce ? 0 : Math.sin(t * 0.9) * 0.15;
+    cat.position.y = reduce ? 0 : Math.sin(t * 2) * 0.04;
+    // sun rays turn slowly and burst out on the yell
+    rays.rotation.z = reduce ? 0 : -t * 0.25;
+    const burst = 1 + open * 0.22;
+    rays.scale.set(burst, burst, 1); glow.scale.setScalar(1 + open * 0.08);
+    renderer.render(scene, camera);
+  }
+  window.__frame = (t, o) => { if (o) yellT = 0.5; pose(t, 0); };
+  if (/[?&]yell\b/.test(location.search)) setInterval(() => { yellT = 0.5; ahh.classList.add('on'); }, 100);  // preview hook
+
+  const clock = new THREE.Clock(); let last = 0;
+  (function loop() {
+    const t = clock.getElapsedTime(); pose(t, Math.min(0.05, t - last)); last = t;
+    requestAnimationFrame(loop);
+  })();
+})();
+</script>
+</body>
+</html>

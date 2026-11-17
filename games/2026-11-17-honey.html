@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#23395D">
+<meta name="robots" content="noindex">
+<title>Tuesday word game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --desk: #23395D; --desk-deep: #182945; --paper: #F3F6FB; --ink: #23315A;
+    --red: #D2453A; --milk: #F3F6FB; --milk-dim: #B9C8DE;
+    --green: #6AAA64; --yellow: #C9B458; --gray: #5A6478; --empty: #2C4470;
+    --gas: #B7D97A;
+    --hand: 'Nanum Pen Script', 'Segoe Print', cursive;
+    --label: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(120% 80% at 50% 40%, var(--desk) 0%, var(--desk-deep) 100%);
+    background-color: var(--desk); color: var(--milk); font-family: var(--label);
+    overflow-x: hidden; -webkit-tap-highlight-color: transparent;
+  }
+  main { min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+         padding: 18px 16px calc(14px + env(safe-area-inset-bottom)); gap: 12px; }
+  header { text-align: center; }
+  h1 { margin: 0; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 1.4rem; }
+  .hint { margin: 4px 0 0; color: var(--milk-dim); font-size: 1.05rem; letter-spacing: .04em; }
+  #game { display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1; width: 100%;
+          transition: transform 900ms cubic-bezier(.5,0,.75,0), opacity 900ms, filter 900ms; }
+  .board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .row.shake { animation: shake 400ms; }
+  .tile { width: min(15vw, 60px); aspect-ratio: 1; display: grid; place-items: center;
+          border: 2px solid var(--empty); font-weight: 700; font-size: 2rem; text-transform: uppercase; }
+  .tile.filled { border-color: var(--milk-dim); animation: pop 120ms; }
+  .tile.flip { animation: flip 500ms ease forwards; }
+  .tile.correct { background: var(--green); border-color: var(--green); }
+  .tile.present { background: var(--yellow); border-color: var(--yellow); }
+  .tile.absent  { background: var(--gray); border-color: var(--gray); }
+  .msg { min-height: 1.4em; margin: 0; font-size: 1.05rem; letter-spacing: .05em; color: var(--paper); }
+  .keyboard { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 7px; margin-top: auto; }
+  .krow { display: flex; gap: 5px; justify-content: center; }
+  .key { flex: 1; min-width: 0; height: 52px; border: 0; border-radius: 5px; background: #8197BC;
+         color: #fff; font: 600 1.1rem var(--label); text-transform: uppercase; cursor: pointer; padding: 0; }
+  .key.wide { flex: 1.5; font-size: .9rem; }
+  .key.correct { background: var(--green); } .key.present { background: var(--yellow); } .key.absent { background: #3A4560; }
+  .key:focus-visible, .btn:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }
+
+  /* the hearts */
+  .cloud { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+  .heart { position: absolute; bottom: -12vh; line-height: 1; opacity: 0; will-change: transform, opacity;
+           animation: heart-up 2600ms cubic-bezier(.2,.7,.3,1) forwards; }
+  .heart.stay { animation: heart-pile 900ms cubic-bezier(.34,1.56,.64,1) forwards; bottom: auto; }
+  #game.gone { transform: translateY(-30px) scale(.2) rotate(-8deg); opacity: 0; filter: blur(3px); }
+  #game.wobble { animation: wobble 500ms ease-in-out; }
+
+  .reward { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; z-index: 6; }
+  .reward[hidden] { display: none; }
+  .card { width: min(100%, 380px); background: var(--paper); color: var(--ink); border-radius: 4px;
+          padding: 24px 22px 20px; text-align: center; box-shadow: 0 18px 40px rgba(0,0,0,.35);
+          animation: rise 600ms cubic-bezier(.16,1,.3,1); }
+  .big { font: 700 2.4rem var(--label); letter-spacing: .1em; margin: 0; color: var(--red); }
+  .sub { font: 600 1rem var(--label); letter-spacing: .12em; text-transform: uppercase; margin: 2px 0 14px; color: #5C6B8C; }
+  .hand { font-family: var(--hand); font-size: 1.75rem; line-height: 1.15; margin: 10px 0; }
+  .joke { font-family: var(--hand); font-size: 1.55rem; line-height: 1.15; margin: 10px 0 0; color: #3B4C78; }
+  .btn { display: inline-block; margin-top: 18px; padding: 10px 18px; border: 2px solid var(--ink); border-radius: 999px;
+         color: var(--ink); text-decoration: none; font: 600 1rem var(--label); letter-spacing: .1em; text-transform: uppercase; background: none; cursor: pointer; }
+
+  @keyframes pop { 50% { transform: scale(1.1); } }
+  @keyframes flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+  @keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+  @keyframes wobble { 25% { transform: scale(1.04, .96); } 50% { transform: scale(.96, 1.05); } 75% { transform: scale(1.03, .98); } }
+  @keyframes heart-up { 0% { opacity: 0; transform: translateY(0) scale(.4) rotate(0); } 15% { opacity: 1; } 100% { opacity: .95; transform: translateY(-120vh) scale(1.2) rotate(var(--r, 12deg)); } }
+  @keyframes heart-pile { 0% { opacity: 0; transform: scale(0); } 100% { opacity: 1; transform: scale(1) rotate(var(--r, 0deg)); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(30px) scale(.95); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+  <div id="game">
+    <header>
+      <h1>Tuesday Word</h1>
+      <p class="hint">5 letters. Sweet, golden, and what I call you.</p>
+    </header>
+    <div class="board" id="board" aria-label="Guesses"></div>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+  <div class="cloud" id="cloud" aria-hidden="true"></div>
+  <section class="reward" id="reward" hidden aria-live="polite">
+    <div class="card">
+      <p class="big" id="big">You got it!</p>
+      <p class="sub" id="sub">Honey was the word</p>
+      <p class="hand">Good morning sunshine, I hope you have a wonderful day</p>
+      <p class="hand">xoxo Lee</p>
+      <a class="btn" href="../">Return to beginning</a>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const ANSWER = 'HONEY', LEN = 5, ROWS = 6;
+  const board = document.getElementById('board');
+  const msg = document.getElementById('msg');
+  const kb = document.getElementById('keyboard');
+  const game = document.getElementById('game');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+  let row = 0, cur = '', done = false, busy = false;
+
+  const tiles = [];
+  for (let r = 0; r < ROWS; r++) {
+    const rowEl = document.createElement('div'); rowEl.className = 'row';
+    tiles.push([]);
+    for (let c = 0; c < LEN; c++) {
+      const t = document.createElement('div'); t.className = 'tile';
+      rowEl.appendChild(t); tiles[r].push(t);
+    }
+    board.appendChild(rowEl);
+  }
+
+  const keyEls = {};
+  ['QWERTYUIOP', 'ASDFGHJKL', '+ZXCVBNM-'].forEach((line) => {
+    const r = document.createElement('div'); r.className = 'krow';
+    for (const ch of line) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'key';
+      if (ch === '+') { b.textContent = 'Enter'; b.classList.add('wide'); b.dataset.k = 'Enter'; }
+      else if (ch === '-') { b.textContent = '⌫'; b.classList.add('wide'); b.dataset.k = 'Backspace'; b.setAttribute('aria-label', 'Delete'); }
+      else { b.textContent = ch; b.dataset.k = ch; keyEls[ch] = b; }
+      r.appendChild(b);
+    }
+    kb.appendChild(r);
+  });
+  kb.addEventListener('click', (e) => { const b = e.target.closest('.key'); if (b) press(b.dataset.k); });
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter' || e.key === 'Backspace') { e.preventDefault(); press(e.key); }
+    else if (/^[a-z]$/i.test(e.key)) press(e.key.toUpperCase());
+  });
+
+  function paint() {
+    tiles[row].forEach((t, i) => { t.textContent = cur[i] || ''; t.classList.toggle('filled', !!cur[i]); });
+  }
+  function say(text) { msg.textContent = text; }
+
+  function score(guess) {
+    const res = Array(LEN).fill('absent'), left = {};
+    for (let i = 0; i < LEN; i++) {
+      if (guess[i] === ANSWER[i]) res[i] = 'correct';
+      else left[ANSWER[i]] = (left[ANSWER[i]] || 0) + 1;
+    }
+    for (let i = 0; i < LEN; i++) {
+      if (res[i] !== 'correct' && left[guess[i]]) { res[i] = 'present'; left[guess[i]]--; }
+    }
+    return res;
+  }
+  const rank = { absent: 1, present: 2, correct: 3 };
+
+  async function press(k) {
+    if (done || busy) return;
+    say('');
+    if (k === 'Backspace') { cur = cur.slice(0, -1); paint(); return; }
+    if (k === 'Enter') {
+      if (cur.length < LEN) {
+        say('Need 5 letters');
+        const r = board.children[row]; r.classList.remove('shake'); void r.offsetWidth; r.classList.add('shake');
+        return;
+      }
+      busy = true;
+      const res = score(cur);
+      for (let i = 0; i < LEN; i++) {
+        const t = tiles[row][i];
+        t.classList.add('flip');
+        await wait(250);
+        t.classList.add(res[i]);
+        const key = keyEls[cur[i]];
+        const prev = [...key.classList].find((c) => rank[c]);
+        if (!prev || rank[res[i]] > rank[prev]) { if (prev) key.classList.remove(prev); key.classList.add(res[i]); }
+        await wait(120);
+      }
+      const won = cur === ANSWER;
+      row++; cur = ''; busy = false;
+      if (won) return hearts(true);
+      if (row === ROWS) return hearts(false);
+      return;
+    }
+    if (cur.length < LEN) { cur += k; paint(); }
+  }
+
+  // preview hook: ?win types a guess and the answer
+  if (/[?&]win\b/.test(location.search)) (async () => { for (const k of [...'BEARS', 'Enter', ...'HONEY', 'Enter']) { await press(k); await wait(50); } })();
+
+  async function hearts(won) {
+    done = true;
+    say(won ? 'You got it! Honey was the word' : 'Out of tries… the word was HONEY');
+    await wait(900);
+    const cloud = document.getElementById('cloud');
+    const pick = ['❤️', '💛', '💗', '🧡', '💕'];
+    // a big wave of hearts floats up…
+    for (let i = 0; i < 60; i++) {
+      const h = document.createElement('span'); h.className = 'heart';
+      h.textContent = pick[i % pick.length];
+      h.style.left = (Math.random() * 100) + '%';
+      h.style.fontSize = (22 + Math.random() * 40) + 'px';
+      h.style.marginLeft = '-20px';
+      h.style.setProperty('--r', (Math.random() * 60 - 30) + 'deg');
+      h.style.animationDelay = (Math.random() * 1400) + 'ms';
+      cloud.appendChild(h);
+    }
+    await wait(1100);
+    // …then hearts fill the whole screen
+    const cols = Math.ceil(innerWidth / 44) + 1, rows = Math.ceil(innerHeight / 44) + 2;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const h = document.createElement('span'); h.className = 'heart stay';
+      h.textContent = pick[(r + c) % pick.length];
+      h.style.left = (c * 44 + (r % 2) * 22 - 6) + 'px';
+      h.style.top = (r * 44 - 6) + 'px';
+      h.style.fontSize = '48px';
+      h.style.setProperty('--r', (Math.random() * 30 - 15) + 'deg');
+      h.style.animationDelay = ((rows - r) * 60 + Math.random() * 200) + 'ms';
+      cloud.appendChild(h);
+    }
+    game.classList.add('gone');
+    await wait(rows * 60 + 1100);
+    if (!won) document.getElementById('big').textContent = 'So close!';
+    document.getElementById('reward').hidden = false;
+  }
+})();
+</script>
+</body>
+</html>

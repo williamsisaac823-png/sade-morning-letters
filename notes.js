@@ -14,4 +14,12 @@ export const NOTES = [
     doodle: 'doodles/2026-11-16-bean-skate.html',
     caption: 'Bean ice skating',
     joke: 'Why is Bean so good on the ice? Years of practice as a jumping bean.' },
+  { date: '2026-11-17', text: 'Good morning sunshine!!\n\nI hope you have a wonderful day. I love you so much and I\'m so proud of you.\n\nxoxo Lee',
+    intro: { image: 'doodles/2026-11-17-sun-cat.jpg', title: 'Happy Tuesday' },
+    doodle: 'doodles/2026-11-17-sun-kitty.html',
+    doodleRatio: '1 / 1',
+    caption: 'Tap the sun kitty',
+    joke: 'What does a cat say when the sun comes up? Good meow-ning, sunshine!',
+    game: 'games/2026-11-17-honey.html',
+    gameLabel: 'Play today\'s word game' },
 ];

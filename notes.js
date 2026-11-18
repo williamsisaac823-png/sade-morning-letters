@@ -22,4 +22,8 @@ export const NOTES = [
     joke: 'What does a cat say when the sun comes up? Good meow-ning, sunshine!',
     game: 'games/2026-11-17-honey.html',
     gameLabel: 'Play today\'s word game' },
+  { date: '2026-11-18', text: 'Happy Camel Day Bean!\n\nWe\'re halfway there baby. Make today yours. I adore you, I\'m proud of you, and I love you to the moon & back.\n\nxoxo Lee',
+    doodle: 'doodles/2026-11-18-camel.html',
+    doodleRatio: '4 / 3',
+    caption: 'Tap the hump day camel' },
 ];

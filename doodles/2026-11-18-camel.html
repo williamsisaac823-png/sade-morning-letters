@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hump day camel</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  svg { display: block; width: 100%; height: 100%; cursor: pointer; touch-action: manipulation; }
+  .ink { stroke: #28354f; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .fur { fill: #dcae66; }
+  .say { font-family: 'Nanum Pen Script', 'Segoe Print', cursive; font-size: 27px; fill: #28354f; }
+  .tap { font-family: 'Nanum Pen Script', 'Segoe Print', cursive; font-size: 17px; fill: #5C6B8C; }
+</style>
+</head>
+<body>
+<svg id="stage" viewBox="0 0 320 240" role="img" aria-label="A cool camel in sunglasses. Tap him: he takes a puff and says Halfway there!">
+  <!-- sand -->
+  <path d="M0 214 C60 206 110 220 170 212 C220 206 270 218 320 210" class="ink" fill="none"/>
+  <path d="M20 226 l14 0 M250 228 l18 0 M60 232 l10 0" class="ink" fill="none" stroke-width="2"/>
+
+  <g id="camel">
+    <!-- tail -->
+    <g id="tail">
+      <path d="M72 146 C62 152 58 162 60 174" class="ink" fill="none"/>
+      <path d="M56 172 l4 10 l5 -9 z" fill="#28354f"/>
+    </g>
+    <!-- back legs + front legs (ink outline under fur) -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M96 172 L92 212 M118 174 L120 212 M178 174 L174 212 M198 170 L203 212" stroke="#28354f" stroke-width="11"/>
+      <path d="M96 172 L92 212 M118 174 L120 212 M178 174 L174 212 M198 170 L203 212" stroke="#dcae66" stroke-width="6"/>
+    </g>
+    <!-- body with two humps (hump day!) -->
+    <path d="M70 150 C70 126 84 118 96 118 C100 86 126 82 134 114 C142 84 172 82 180 118 C200 118 213 132 213 150 C213 172 196 180 140 180 C90 180 70 172 70 150 Z" class="ink fur"/>
+    <!-- neck + head (group tilts when he puffs) -->
+    <g id="head">
+      <path d="M198 132 C216 120 226 98 234 72 L254 78 C248 104 238 134 214 152 Z" class="ink fur"/>
+      <path d="M232 70 C236 54 262 50 276 60 C290 68 290 82 276 84 C262 86 240 86 232 70 Z" class="ink fur"/>
+      <!-- ear -->
+      <path d="M240 58 l-6 -12 l12 6 z" class="ink fur" stroke-width="2.5"/>
+      <!-- cheek -->
+      <ellipse id="cheek" cx="268" cy="76" rx="6" ry="4" fill="#f4a9b8" opacity=".7"/>
+      <!-- sunglasses -->
+      <path d="M244 62 L278 60" class="ink" fill="none" stroke-width="2.5"/>
+      <rect id="shades" x="252" y="58" width="20" height="11" rx="4" fill="#28354f"/>
+      <path d="M256 61 l6 0" stroke="#8ea3c7" stroke-width="2" stroke-linecap="round"/>
+      <!-- nostril + mouth -->
+      <path d="M283 66 l-2 3" class="ink" fill="none" stroke-width="2"/>
+      <path id="mouth" d="M272 80 C277 82 281 81 284 78" class="ink" fill="none" stroke-width="2.5"/>
+      <!-- cigarette -->
+      <g id="cig">
+        <rect x="280" y="76" width="24" height="5" rx="1.5" fill="#fff" stroke="#28354f" stroke-width="1.6" transform="rotate(10 280 78)"/>
+        <rect x="280" y="76" width="7" height="5" rx="1.5" fill="#e8a25a" stroke="#28354f" stroke-width="1.6" transform="rotate(10 280 78)"/>
+        <circle id="ember" cx="304" cy="82.5" r="3" fill="#ff7a2e"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- smoke puffs go here -->
+  <g id="smoke"></g>
+
+  <!-- speech bubble -->
+  <g id="bubble" opacity="0" transform="translate(0 0)">
+    <path d="M70 12 h132 a14 14 0 0 1 14 14 v16 a14 14 0 0 1 -14 14 h-36 l-14 14 l-2 -14 h-80 a14 14 0 0 1 -14 -14 v-16 a14 14 0 0 1 14 -14 z" fill="#fff" class="ink"/>
+    <text x="136" y="43" text-anchor="middle" class="say">Halfway there!</text>
+  </g>
+  <text id="tap" x="160" y="236" text-anchor="middle" class="tap">tap the camel</text>
+</svg>
+<script>
+(() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = (id) => document.getElementById(id);
+  const head = $('head'), tail = $('tail'), ember = $('ember'), shades = $('shades'), cheek = $('cheek'),
+        smoke = $('smoke'), bubble = $('bubble'), tapHint = $('tap');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MOUTH = { x: 284, y: 79 }, TIP = { x: 305, y: 82 };
+
+  const puffs = [];
+  function puff(x, y, big) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('fill', '#b9c4d6'); c.setAttribute('stroke', '#7f8ea8'); c.setAttribute('stroke-width', '1');
+    smoke.appendChild(c);
+    puffs.push({ el: c, x, y, vx: big ? -6 + Math.random() * 14 : 2 + Math.random() * 5,
+      vy: big ? -26 - Math.random() * 18 : -16 - Math.random() * 6, r: big ? 6 : 2.5, grow: big ? 22 : 6,
+      life: 0, max: big ? 1.9 + Math.random() * 0.6 : 1.6 });
+  }
+
+  // tap: inhale (ember glows, head tips back) -> exhale smoke -> "Halfway there!"
+  let t0 = -1, wisp = 0;
+  $('stage').addEventListener('pointerup', () => { if (t0 < 0) { t0 = performance.now() / 1000; tapHint.style.opacity = 0; } });
+
+  let last = performance.now() / 1000;
+  function frame() {
+    const now = performance.now() / 1000, dt = Math.min(0.05, now - last); last = now;
+    let tilt = 0, glow = 0, cheekR = 6, showBubble = 0;
+    if (t0 >= 0) {
+      const k = now - t0;
+      if (k < 1.0) { tilt = -6 * Math.min(1, k / 0.4); glow = Math.min(1, k / 0.5); cheekR = 6 + 3 * Math.min(1, k / 0.6); }
+      else if (k < 2.2) {
+        const e = (k - 1.0) / 1.2;
+        tilt = -6 * (1 - Math.min(1, e * 2)); glow = 1 - e; cheekR = 9 - 3 * Math.min(1, e * 2);
+        if (!reduce && Math.random() < 0.8) puff(MOUTH.x - 4, MOUTH.y, true);
+      }
+      if (k >= 2.4 && k < 6.5) showBubble = 1;
+      if (k >= 6.7) { t0 = -1; tapHint.style.opacity = 1; }
+    }
+    head.setAttribute('transform', `rotate(${tilt} 230 110)`);
+    cheek.setAttribute('rx', cheekR);
+    ember.setAttribute('r', 3 + glow * 2.2);
+    ember.setAttribute('fill', glow > 0.3 ? '#ff4a1c' : '#ff7a2e');
+    shades.setAttribute('y', 58 - glow * 1.5);
+    bubble.setAttribute('opacity', showBubble);
+    bubble.setAttribute('transform', showBubble ? '' : 'translate(0 6)');
+    if (!reduce) tail.setAttribute('transform', `rotate(${Math.sin(now * 2.4) * 8} 72 146)`);
+    // tiny idle wisp from the cig tip
+    wisp += dt; if (!reduce && wisp > 0.45) { wisp = 0; puff(TIP.x, TIP.y, false); }
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const p = puffs[i]; p.life += dt;
+      const f = p.life / p.max;
+      if (f >= 1) { p.el.remove(); puffs.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.985;
+      p.el.setAttribute('cx', p.x.toFixed(1)); p.el.setAttribute('cy', p.y.toFixed(1));
+      p.el.setAttribute('r', (p.r + p.grow * f).toFixed(1));
+      p.el.setAttribute('opacity', (0.85 * (1 - f)).toFixed(2));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  if (/[?&]puff\b/.test(location.search)) setTimeout(() => { t0 = performance.now() / 1000 - 2.4; }, 300);  // preview hook
+})();
+</script>
+</body>
+</html>
